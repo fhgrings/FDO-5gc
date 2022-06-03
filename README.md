@@ -39,17 +39,16 @@ The AWS architecture was designed to provide the entire AWS VPC and security res
 
 
 
-Kubernetes cluster is configured by Ansible Playbook. Follow free5GC Helm especifications.
+Kubernetes cluster is configured by Ansible Playbook using Kubespray Project:
+
+After Kubernetes installed these modules are required:
 
 * GTP5G Kernel Module - For UPF tunneling communication;
-* Helm 3+ - For Free5GC Cluster Deploy;
-* Simple CNI (Flannel) - Main Cluster CNI;
-* Multus CNI - For UPF seccundary interface configuration;
-* Free5GC Namespace;
-* free5gc-local-pv - For Mongo Volume;
-* MongoDB.
+* open-free5gc-helm from this repo;
+* Prometheus (Optional);
+* Nginx (Optional);
 
-After configuring Free5GC Helm especifications the playbook add Prometheus, Nginx Ingress Controller, Fluend and run Helm Install.
+After configuring Free5GC Helm specifications you will get the following scenario:
 
 ![](./imgs/cluster-architecture.png)
 
@@ -63,14 +62,16 @@ After configuring Free5GC Helm especifications the playbook add Prometheus, Ngin
 To run you need to follow 3 steps
 * Terraform
 * Build k8s Cluster
-* Deploy 5g Core environment
+* Install GTP5G Linux Kernel Module 
+* Deploy 5G Core environment
 
 In Terraform stage you can choose between AWS or Proxmox, so:
 
 If you already have VMs ingore the first step.
 
+## Infrastructure
 
-### Build AWS Infrastructure
+#### Build AWS Infrastructure
 
 Create AWS account
 
@@ -84,58 +85,70 @@ terraform plan
 terraform apply --auto-approve
 ```
 
-### Build Local VMs Infrastructure
-![Docs](./terraform-vms-proxmox/README.md)
+#### Build Local VMs Infrastructure
+[Docs](./terraform-vms-proxmox/README.md)
 
+## Environment
 
+### Prepare OS to 5G
+
+Install [GTP5G Linux Kernel Module](https://github.com/free5gc/gtp5g) 
+
+Install [Helm Project](https://helm.sh/docs/intro/install/)
 
 ### Build Kubernetes Environment
 
-#### If AWS
-To run AWS configuration remember to add [AWS Credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/getting-your-credentials.html)
+Install Kubernetes using [Kubespray Project](https://github.com/kubernetes-sigs/kubespray )
 
-To install run the commands:
+Before Install
 
-```bash
-cd ansible-k8s
-./run.sh
-```
+* Update inventory group_vars to use Calico as default CNI 
 
-After Installed enter on [AWS Console](https://us-east-2.console.aws.amazon.com/console/home) and connect to K8S-DEMO-EC2-MASTER-pub;
+### Install Free5gc Core
 
-
-#### If Local VMs
-```bash
-cd  ansible-k8s
-# Update hosts file with IP/Domain name from your master and workers
-./run-local.sh
-```
-
-Run the commands:
+Connect on Kubernetes Master VM
 
 ```bash
-export KUBECONFIG=/etc/kubernetes/adming.config
-kubectl get pods -A
-```
-
-### Insall Free5gc Core
-```bash
-cd ./ansible-free5gc
-# Update hosts file with IP/Domain name from your master and workers
-./run-local.sh
+git clone https://github.com/fhgrings/open-free5gc-helm
+kubectl create namespace free5gc
+kubectl config set-context --current --namespace=free5gc
+helm install open -n free5gc open-free5gc-helm/
 ```
 
 
 ### Check Availability
 ```bash
-export KUBECONFIG=/etc/kubernetes/adming.config
-kubectl get pods -A
+kubectl get pods 
 ```
 Check if all pods are running 
-![](./imgs/cluster.jpeg)
+
+![](./imgs/cluster.png)
 
 
-#### FAQ
+
+## Tests
+
+#### Install my5G-RANTester
+
+```bash
+git clone https://github.com/my5G/my5g-RANTester-helm.git
+kubectl apply -f my5g-RANTester-helm/5g-tester.yaml
+```
+
+Docs:
+
+https://github.com/my5G/my5G-RANTester
+
+#### SSH Tunneling (Optional)
+
+```bash
+ssh -L 5000:intra.example.com:5000 gw.example.com
+```
+
+
+
+## FAQ
+
 Problem
 
 Mongodb pending with message "1 node(s) had volume node affinity conflict"
@@ -179,7 +192,7 @@ https://pkg.go.dev/net/http
 
 https://pkg.go.dev/golang.org/x/net/http2/h2c
 
-https://github.com/free5gc/amf/blob/e857bcd091ec69e66a2d390345fb4faf5c5d89e2/consumer/nf_mangement.go (Exemplo de classe: Nnrf_NFManagement)
+https://github.com/free5gc/amf/blob/e857bcd091ec69e66a2d390345fb4faf5c5d89e2/consumer/nf_mangement.go (Class example: Nnrf_NFManagement)
 
 
 
