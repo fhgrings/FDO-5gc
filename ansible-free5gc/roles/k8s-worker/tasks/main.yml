@@ -1,8 +1,0 @@
-- name: Reset Kubernetes component
-  shell: "echo a"
-  register: reset_cluster
-
-- name: Join to Kubernetes cluster
-  when: reset_cluster is succeeded
-  shell: "echo a"
-  register: join_cluster

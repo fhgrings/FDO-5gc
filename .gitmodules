@@ -1,0 +1,3 @@
+[submodule "open-free5gc-helm"]
+	path = open-free5gc-helm
+	url = https://github.com/fhgrings/open-free5gc-helm.git

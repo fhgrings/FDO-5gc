@@ -1,1 +1,0 @@
-ansible-playbook -u ubuntu -i ec2.py site.yml
